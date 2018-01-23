@@ -1,3 +1,2 @@
-The GAP 4 package `GAPSyntaxTreeTools'
-==============================
+# The GAP 4 package `GAPSyntaxTreeTools'
 
