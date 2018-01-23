@@ -11,7 +11,7 @@ GAPINSTALLLIB = $(BINARCHDIR)/GAPSyntaxTreeTools.so
 
 lib_LTLIBRARIES = GAPSyntaxTreeTools.la
 
-GAPSyntaxTreeTools_la_SOURCES = src/GAPSyntaxTreeTools.c
+GAPSyntaxTreeTools_la_SOURCES = src/syntaxtree.c
 GAPSyntaxTreeTools_la_CPPFLAGS = $(GAP_CPPFLAGS) -DCONFIG_H
 GAPSyntaxTreeTools_la_LDFLAGS = -module -avoid-version
 if SYS_IS_CYGWIN

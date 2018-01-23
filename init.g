@@ -9,4 +9,5 @@ if _PATH_SO <> fail then
 fi;
 Unbind(_PATH_SO);
 
+ReadPackage( "GAPSyntaxTreeTools", "gap/syntaxtree.gd");
 ReadPackage( "GAPSyntaxTreeTools", "gap/GAPSyntaxTreeTools.gd");
