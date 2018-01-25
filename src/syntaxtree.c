@@ -12,22 +12,13 @@
 **  - what about T_SEQ_STATN? This should be flattened to just a list of statements
 **    the same goes for ProccallNArgs, FunccallNargs, and the different loop body
 **    variants as these are really details of the bytecode.
-** 
+**  - Should we be hooking into the parser/interpreter/coder instead of compiling
+**    bytecode?
 */
 #include <stdarg.h>
-
-/* #include "code.h"
-#include "gasman.h"
-#include "objects.h"
-
-#include "exprs.h"
-#include "gapstate.h"
-#include "stats.h"
-*/
-#include "src/compiled.h"
-// #include "vars.h"
-
 #include <ctype.h>
+
+#include "src/compiled.h"
 
 typedef UInt4 LVar;
 typedef UInt4 HVar;
@@ -49,15 +40,17 @@ typedef struct {
     ArgT         args[6]; /* This is not really a restriction */
 } CompilerT;
 
-static const CompilerT StatCompilers[];
-static const CompilerT ExprCompilers[];
-
+// We put compilers for statements and expressions into the same
+// static array, assuming that TNUM ranges are disjoint. This
+// is true in GAP 4.9
+static const CompilerT Compilers[];
 #define COMPILER_ARITY(...)                                                  \
     (sizeof((ArgT []){ __VA_ARGS__ }) / sizeof(ArgT))
 #define COMPILER(tnum, compiler, ...)                                        \
+    [ tnum ] = \
     {                                                                        \
-        tnum, compiler, #tnum, COMPILER_ARITY(__VA_ARGS__),                  \
-        {                                                                    \
+        tnum, compiler, #tnum,                    \
+        COMPILER_ARITY(__VA_ARGS__), {                      \
             __VA_ARGS__                                                      \
         }                                                                    \
     }
@@ -67,6 +60,8 @@ static const CompilerT ExprCompilers[];
 #define ARG(name, func) \
     { name, func }
 #define ARG_(name) ARG(name, SyntaxTreeCompiler)
+
+#define SET_COMPILER(tnum, compiler, ...) [tnum]=COMPILER(tnum,compiler,__VA_ARGS__)
 
 static inline Obj SyntaxTreeFunc(Obj result, Obj func);
 
@@ -88,19 +83,13 @@ static Obj SyntaxTreeCompiler(Expr expr)
     UInt      tnum;
     CompilerT comp;
 
+    // TODO: GAP_ASSERT
     tnum = TNUM_EXPR(expr);
+    comp = Compilers[tnum];
 
-    if (tnum < 128) {
-        comp = StatCompilers[tnum];
-    }
-    else if ((128 <= tnum) && (tnum < 256)) {
-        comp = ExprCompilers[tnum - 128];
-    }
-    else {
-        // error
-    }
-
+    // TODO: clean
     result = NewSyntaxTreeNode(comp.name);
+    AssPRec(result, RNamName("line"), INTOBJ_INT(STAT_HEADER(expr)->line));
 
     comp.compile(result, expr);
 
@@ -118,17 +107,9 @@ static Obj SyntaxTreeDefaultCompiler(Obj result, Expr expr)
     UInt      tnum;
     CompilerT comp;
 
+    // TODO: GAP_ASSERT tnum range
     tnum = TNUM_EXPR(expr);
-
-    if (tnum < 128) {
-        comp = StatCompilers[tnum];
-    }
-    else if ((128 <= tnum) && (tnum < 256)) {
-        comp = ExprCompilers[tnum - 128];
-    }
-    else {
-        // error
-    }
+    comp = Compilers[tnum];
 
     for (i = 0; i < comp.arity; i++) {
         AssPRec(result, RNamName(comp.args[i].argname),
@@ -654,10 +635,8 @@ static Obj SyntaxTreeFunc(Obj result, Obj func)
     return result;
 }
 
-/* TODO: Make this the table for all compilers?
-   static CompilerT AllCompilers[256]; */
 
-static const CompilerT StatCompilers[] = {
+static const CompilerT Compilers[] = {
     COMPILER(T_PROCCALL_0ARGS, SyntaxTreeFunccall),
     COMPILER(T_PROCCALL_1ARGS, SyntaxTreeFunccall),
     COMPILER(T_PROCCALL_2ARGS, SyntaxTreeFunccall),
@@ -770,9 +749,8 @@ static const CompilerT StatCompilers[] = {
               ARG_("level"), ARG_("condition")),
     COMPILER_(T_ASSERT_3ARGS,
               ARG_("level"), ARG_("condition"), ARG_("message")),
-};
 
-static const CompilerT ExprCompilers[] = {
+    /* Statements */
     COMPILER(T_FUNCCALL_0ARGS, SyntaxTreeFunccall),
     COMPILER(T_FUNCCALL_1ARGS, SyntaxTreeFunccall),
     COMPILER(T_FUNCCALL_2ARGS, SyntaxTreeFunccall),
@@ -898,22 +876,6 @@ static Int InitKernel(StructInitInfo * module)
     /* init filters and functions */
     InitHdlrFuncsFromTable(GVarFuncs);
 
-    /* TODO: Needed? Cleaner? Remove? */
-    /* check TNUMS table */
-    for (i = FIRST_STAT_TNUM; i < LAST_STAT_TNUM; i++) {
-        if (!(StatCompilers[i].tnum == i)) {
-            fprintf(stderr, "Warning, statement tnum desync %jd %jd %s\n",
-                    StatCompilers[i].tnum, i, StatCompilers[i].name);
-        }
-    }
-
-    for (i = FIRST_EXPR_TNUM; i < LAST_EXPR_TNUM; i++) {
-        if (!(ExprCompilers[i - FIRST_EXPR_TNUM].tnum == i)) {
-            fprintf(stderr, "Warning, expression tnum desync %jd %jd %s\n",
-                    ExprCompilers[i - FIRST_EXPR_TNUM].tnum, i,
-                    ExprCompilers[i - FIRST_EXPR_TNUM].name);
-        }
-    }
     return 0;
 }
 
