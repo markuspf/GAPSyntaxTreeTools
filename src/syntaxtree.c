@@ -89,7 +89,7 @@ static Obj SyntaxTreeCompiler(Expr expr)
 
     // TODO: clean
     result = NewSyntaxTreeNode(comp.name);
-    AssPRec(result, RNamName("line"), INTOBJ_INT(STAT_HEADER(expr)->line));
+    // AssPRec(result, RNamName("line"), INTOBJ_INT(STAT_HEADER(expr)->line));
 
     comp.compile(result, expr);
 
