@@ -61,8 +61,6 @@ static const CompilerT Compilers[];
     { name, func }
 #define ARG_(name) ARG(name, SyntaxTreeCompiler)
 
-#define SET_COMPILER(tnum, compiler, ...) [tnum]=COMPILER(tnum,compiler,__VA_ARGS__)
-
 static inline Obj SyntaxTreeFunc(Obj result, Obj func);
 
 static inline Obj NewSyntaxTreeNode(const char * type)
