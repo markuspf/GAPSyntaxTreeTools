@@ -8,7 +8,9 @@ function(f)
         Error("f has to be a GAP function (not an operation or a kernel function)");
     fi;
 
-    return Objectify( SyntaxTreeType, rec( tree := SYNTAX_TREE(f) ) );
+    return Objectify( SyntaxTreeType, rec( file := FilenameFunc(f)
+                                         , line := StartlineFunc(f)
+                                         , tree := SYNTAX_TREE(f) ) );
 end);
 
 InstallMethod( ViewString, "for a syntax tree"
