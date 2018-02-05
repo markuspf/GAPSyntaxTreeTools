@@ -862,10 +862,9 @@ Obj FuncSYNTAX_TREE(Obj self, Obj func)
     return SyntaxTreeFunc(result, func);
 }
 
-static StructGVarFunc GVarFuncs[] = { { "SYNTAX_TREE", 1, "func",
-                                        FuncSYNTAX_TREE,
-                                        "src/syntaxtree.c:SYNTAX_TREE" },
-                                      { 0 } };
+static StructGVarFunc GVarFuncs[] = {
+    GVAR_FUNC(SYNTAX_TREE, 1, "function"),
+    { 0 } };
 
 static Int InitKernel(StructInitInfo * module)
 {
